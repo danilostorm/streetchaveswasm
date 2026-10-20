@@ -1,0 +1,4 @@
+Street Chaves Remaster (Python/Pygame) by Adoregabriel2005. Based on Street Chaves by Cybergamba (2003). Fan project.
+Upstream: https://github.com/Adoregabriel2005/StreetChaves-Remaster
+Runtime: Pygbag 0.9.3 / pygame-ce / CPython WebAssembly. Original assets remain credited to their authors.
+Permission to redistribute third-party assets is not asserted by this deployment.

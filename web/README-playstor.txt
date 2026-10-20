@@ -1,0 +1,1 @@
+Street Chaves Remaster - experimental WebAssembly adaptation for PlayStor; source: https://github.com/Adoregabriel2005/StreetChaves-Remaster; runtime: pygame-web/pygbag; not yet verified as browser-playable.

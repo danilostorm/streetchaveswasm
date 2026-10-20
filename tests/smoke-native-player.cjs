@@ -1,0 +1,22 @@
+const {chromium}=require('/app/node_modules/playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const page=await browser.newPage({viewport:{width:1150,height:830}});
+ const errors=[],logs=[];
+ page.on('pageerror',e=>errors.push(String(e)));
+ page.on('console',m=>{if(m.type()==='error')logs.push(m.text())});
+ await page.goto('http://127.0.0.1:18837/pc-web/street-chaves-player-test.html',{waitUntil:'domcontentloaded',timeout:25000});
+ await page.waitForFunction(()=>window.testRuntime?.getStatus?.()==='running',{timeout:30000});
+ console.log('NATIVE_STAGE',JSON.stringify(await page.evaluate(()=>({frame:document.querySelector('.playstor-street-chaves-frame')?.getAttribute('src'),status:window.testRuntime.getStatus()}))));
+ const frame=page.frameLocator('iframe.playstor-street-chaves-frame');
+ await frame.locator('#playstor-launch-hint').click({timeout:30000});
+ await page.waitForTimeout(20000);
+ const state=await frame.locator('canvas#canvas').evaluate(c=>({width:c.width,height:c.height,css:{width:getComputedStyle(c).width,height:getComputedStyle(c).height},title:document.title,html:document.querySelector('#playstor-launch-hint')?.className,termHidden:getComputedStyle(document.querySelector('#pyconsole')).display}));
+ console.log('GAME_STATE',JSON.stringify(state));
+ await page.screenshot({path:'/out/screenshot-playstor-native.png'});
+ console.log('BROWSER_ERRORS',JSON.stringify(errors));
+ console.log('CONSOLE_ERRORS',JSON.stringify(logs.slice(-12)));
+ await page.evaluate(()=>window.testRuntime.exit());
+ console.log('CLOSED',await page.evaluate(()=>({status:window.testRuntime.getStatus(),frameCount:document.querySelectorAll('iframe.playstor-street-chaves-frame').length})));
+ await browser.close();
+})().catch(e=>{console.error('SMOKE_FATAL',e.stack||e);process.exit(1)});

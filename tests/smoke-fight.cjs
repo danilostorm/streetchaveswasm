@@ -1,0 +1,22 @@
+const {chromium}=require('/app/node_modules/playwright');
+(async()=>{
+ const b=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const p=await b.newPage({viewport:{width:1200,height:850}});
+ const consoleErrors=[];p.on('pageerror',e=>consoleErrors.push(String(e)));
+ await p.goto('http://127.0.0.1:18836/?playtest=202610192238',{waitUntil:'domcontentloaded',timeout:35000});
+ await p.waitForTimeout(7000);await p.mouse.click(580,420);await p.waitForTimeout(15000);
+ await p.screenshot({path:'/out/fight-intro.png'});
+ await p.keyboard.press('Enter');await p.waitForTimeout(3500);
+ await p.screenshot({path:'/out/fight-title.png'});
+ await p.keyboard.press('Enter');await p.waitForTimeout(3000);
+ await p.screenshot({path:'/out/fight-select.png'});
+ await p.keyboard.press('Enter');await p.waitForTimeout(3000);
+ await p.screenshot({path:'/out/fight-confirm.png'});
+ await p.keyboard.press('Enter');await p.waitForTimeout(4000);
+ await p.screenshot({path:'/out/fight-start.png'});
+ await p.keyboard.down('d');await p.keyboard.down('h');await p.waitForTimeout(800);await p.keyboard.up('h');await p.keyboard.up('d');
+ await p.waitForTimeout(1800);await p.screenshot({path:'/out/fight-action.png'});
+ console.log('CANVAS',JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll('canvas')].map(c=>({w:c.width,h:c.height,display:getComputedStyle(c).display})))));
+ console.log('ERRORS',JSON.stringify(consoleErrors));
+ await b.close();
+})().catch(e=>{console.error('SMOKE_FATAL',e.stack||e);process.exit(1);});
