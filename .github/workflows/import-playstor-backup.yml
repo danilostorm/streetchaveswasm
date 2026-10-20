@@ -1,0 +1,54 @@
+name: Import Street Chaves WASM backup
+on:
+  push:
+    paths:
+      - ".github/workflows/import-playstor-backup.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    if: github.repository == 'danilostorm/streetchaveswasm'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download and verify snapshot from PlayStor
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-delay 4 --max-time 180 \
+            https://playstor.hoststorm.cloud/pc-web/street-chaves/repository-import.zip \
+            --output /tmp/streetchaves-import.zip
+          printf '%s  %s\n' '356b04c3629e9cd478a0841f5d35245afedcc2bc68f3df05627e8dbba61dcac6' '/tmp/streetchaves-import.zip' | sha256sum --check
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          root=Path.cwd()
+          with ZipFile('/tmp/streetchaves-import.zip') as z:
+              files=z.namelist()
+              assert len(files)>=740, len(files)
+              for name in files:
+                  entry=Path(name)
+                  assert not entry.is_absolute() and '..' not in entry.parts
+                  assert '.git' not in entry.parts
+                  assert not any(part in ('node_modules','.venv','__pycache__') for part in entry.parts)
+              z.extractall(root)
+          print('Imported',len(files),'project files')
+          PY
+          test -f web/main.py
+          test -f upstream/street_chaves_remaster.py
+          test -f playstor/web.tar.gz
+      - name: Commit backed-up source and game assets
+        run: |
+          set -euo pipefail
+          git add --all
+          if git diff --cached --quiet; then
+            echo 'No changes detected'
+            exit 0
+          fi
+          git -c user.name='PlayStor Project Backup' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m 'backup: add complete Street Chaves WASM sources, assets and PlayStor integration'
+          git push origin HEAD:main
